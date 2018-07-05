@@ -35,6 +35,18 @@ class PurchaseRequest(models.Model):
         return self.env['ir.sequence'].next_by_code('purchase.request')
 
     @api.model
+    def _default_employee(self):
+        return self.env['hr.employee'].search([('user_id', '=', self.env.uid)], limit=1).user_id
+
+    @api.model
+    def _default_parent_id(self):
+         return self.env['hr.employee'].search([('user_id', '=', self.env.uid)], limit=1).parent_id.user_id
+
+    @api.model
+    def _default_user_id(self):
+    	return self.env['res.users'].browse(self.env.uid)
+
+    @api.model
     def _default_picking_type(self):
         type_obj = self.env['stock.picking.type']
         company_id = self.env.context.get('company_id') or \
@@ -82,8 +94,22 @@ class PurchaseRequest(models.Model):
                                    required=True,
                                    track_visibility='onchange',
                                    default=_get_default_requested_by)
-    assigned_to = fields.Many2one('res.users', 'Approver',
-                                  track_visibility='onchange')
+    assigned_to = fields.Many2one('res.users',
+                                   'Approval By',
+                                   readonly=True,
+                                   default=_default_parent_id)
+    employee_id = fields.Many2one('res.users',
+                                  string='Employee',
+                                  readonly=True,
+                                  default=_default_employee)
+    parent_id = fields.Many2one('res.users',
+                                'Manager',
+                                readonly=True,
+                                default=_default_parent_id)
+    user_id = fields.Many2one('res.users',
+                              string='User',
+                              readonly=True,
+                              default=_default_user_id)
     description = fields.Text('Description')
     company_id = fields.Many2one('res.company', 'Company',
                                  required=True,
